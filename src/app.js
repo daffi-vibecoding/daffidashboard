@@ -206,10 +206,14 @@ async function sendMagicLink(event) {
   }
 
   setAuthMessage('Sending magic link…', 'info');
+  const redirectUrl = window.location.origin.includes('localhost')
+    ? 'https://daffidashboard-topaz.vercel.app'
+    : window.location.origin;
+  
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: window.location.origin,
+      emailRedirectTo: redirectUrl,
     },
   });
 
