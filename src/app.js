@@ -263,6 +263,7 @@ async function initAuth() {
   if (!supabase) {
     setStatus('Missing Supabase config', false);
     setAuthMessage('Missing Supabase configuration. Check VITE_SUPABASE_URL/ANON_KEY.', 'error');
+    updateAuthUI();
     return;
   }
 

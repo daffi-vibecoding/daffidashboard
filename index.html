@@ -39,6 +39,20 @@
         </div>
       </header>
 
+      <section class="auth-panel" id="auth-panel" style="display:none">
+        <div class="card auth-card">
+          <h2>Sign in</h2>
+          <p class="muted">Use your approved email to receive a magic-link sign-in.</p>
+          <form id="auth-form" class="auth-form">
+            <label for="auth-email">Email</label>
+            <input id="auth-email" type="email" placeholder="you@company.com" required />
+            <button class="btn" type="submit">Send magic link</button>
+          </form>
+          <div class="auth-message" id="auth-message" data-type="info"></div>
+          <p class="hint">Allowed: dfirwin2@gmail.com, jones.amanda892@gmail.com</p>
+        </div>
+      </section>
+
       <main class="layout">
         <section class="panel kanban" id="kanban-panel">
           <div class="panel-header">
@@ -83,6 +97,7 @@
               <span>Compact View</span>
             </label>
           </div>
+          <div class="kanban-tabs" id="kanban-tabs"></div>
           <div class="kanban-board" id="kanban-board"></div>
         </section>
 

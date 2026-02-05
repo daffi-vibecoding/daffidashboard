@@ -1,70 +1,68 @@
-# OpenClaw Dashboard (Supabase)
+# OpenClaw Dashboard (Vite + Supabase)
 
-Mobile-friendly web dashboard for:
-- Kanban board (stored in Supabase)
-- Cron Jobs list + detail view (stored in Supabase)
-- API cost tracking UI (works in local mode when `server.js` is used; hosted deploys won’t have access to your local OpenClaw logs)
+A production-ready OpenClaw dashboard with Supabase auth + Postgres and a cron jobs view. Built with Vite + vanilla HTML/CSS/JS.
 
-## Supabase setup
+## Quick Start (Local)
 
-1) Create a Supabase project.
-
-2) Enable **Auth → Email → Magic link**.
-
-3) Run the SQL in `supabase/schema.sql` in the Supabase SQL editor.
-   - This creates `kanban_boards` + `cron_jobs` tables.
-   - RLS policies restrict access to the signed-in user **and** enforce an allowlist of exactly:
-     - `dfirwin2@gmail.com`
-     - `jones.amanda892@gmail.com`
-
-## Local dev (Vite)
+1. Install deps
 
 ```bash
 npm install
+```
 
-# required
-export VITE_SUPABASE_URL="https://gatnjthisbqtvbjbqcqh.supabase.co"
-export VITE_SUPABASE_ANON_KEY="<your anon/publishable key>"
+2. Create `.env` from `.env.example`
 
+```bash
+cp .env.example .env
+```
+
+3. Run Vite
+
+```bash
 npm run dev
 ```
 
-Open http://localhost:5177
+## Supabase Setup
 
-## Deploy (Vercel)
+1. Create a Supabase project.
+2. In the SQL editor, run `supabase/seed.sql`.
+3. In Auth settings:
+   - Enable Email provider.
+   - Add your site URL and the redirect URL (for Vercel) so magic links return to the app.
+4. Only these two emails are allowed by policy and UI:
+   - `dfirwin2@gmail.com`
+   - `jones.amanda892@gmail.com`
 
-1) Import this repo/folder into Vercel.
+Note: The UI blocks other emails from requesting magic links, and RLS blocks data access for any other account.
 
-2) Set environment variables:
-- `VITE_SUPABASE_URL` = `https://gatnjthisbqtvbjbqcqh.supabase.co`
-- `VITE_SUPABASE_ANON_KEY` = `sb_publishable_ij16OCGF-6FVF_vqKVYUPg_lZ7qW4ou`
+## Vercel Deployment
 
-3) Build settings:
-- Build command: `npm run build`
-- Output directory: `dist`
+1. Push the repo to GitHub.
+2. Create a Vercel project from the repo.
+3. Set Environment Variables in Vercel (Project Settings):
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - Optional: `VITE_USAGE_API_URL` (if you host an API usage endpoint)
+4. Build command: `npm run build`
+5. Output directory: `dist`
 
-## Cron job sync script (OpenClaw → Supabase)
+## Cron Jobs Sync Script
 
-This pulls the current OpenClaw cron job list from your machine and upserts into Supabase.
-
-Prereqs:
-- You must have the Supabase **service role** key available locally (do **not** put this in Vercel).
-- The target user must exist in Supabase Auth (they can create it by signing in once via magic link).
-
-Run:
+A server-side script is included to sync OpenClaw cron jobs into Supabase.
 
 ```bash
-export SUPABASE_URL="https://gatnjthisbqtvbjbqcqh.supabase.co"
-export SUPABASE_SERVICE_ROLE_KEY="<service role key>"
-export TARGET_EMAIL="dfirwin2@gmail.com"
-
 npm run sync:cron
 ```
 
+Required env vars for the script:
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- Optional: `OPENCLAW_BIN` (defaults to `openclaw`)
+
+The script calls `openclaw cron list --json` when available and falls back to `openclaw cron list`.
+
 ## Notes
 
-- Allowlist enforcement exists in **two places**:
-  - Frontend: blocks login attempts for non-allowlisted emails.
-  - Database: RLS policy checks the JWT email.
-
-- The Kanban board is stored as a JSON document per user in `kanban_boards.data` to preserve the existing fields/features.
+- Kanban data is stored in Supabase tables (`boards`, `columns`, `cards`).
+- UI preferences (theme, filters, compact mode) are stored in localStorage only.
+- API usage charts are optional; set `VITE_USAGE_API_URL` to enable.
