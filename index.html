@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenClaw Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body data-theme="dark">
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo">OC</div>
+          <div>
+            <p class="title">OpenClaw</p>
+            <p class="subtitle">Operations + Cost Intelligence</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <div class="status">
+            <span class="dot" id="status-dot"></span>
+            <span id="status-text">Loading…</span>
+          </div>
+          <button class="btn ghost" id="refresh-btn">Refresh</button>
+          <button class="btn" id="theme-btn">Toggle Theme</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel kanban">
+          <div class="panel-header">
+            <h2>Kanban</h2>
+            <div class="panel-actions">
+              <button class="btn" id="add-card-btn">Add Card</button>
+            </div>
+          </div>
+          <div class="kanban-board" id="kanban-board"></div>
+        </section>
+
+        <section class="panel metrics">
+          <div class="panel-header">
+            <h2>API Cost Tracking</h2>
+            <div class="panel-actions">
+              <div class="chip" id="log-source">Logs: …</div>
+              <div class="chip" id="last-updated">Updated: …</div>
+            </div>
+          </div>
+
+          <div class="grid stats" id="summary-cards"></div>
+
+          <div class="grid charts">
+            <div class="card">
+              <h3>Daily Cost (30d)</h3>
+              <canvas id="daily-chart" height="160"></canvas>
+            </div>
+            <div class="card">
+              <h3>Weekly Cost (12w)</h3>
+              <canvas id="weekly-chart" height="160"></canvas>
+            </div>
+            <div class="card">
+              <h3>Monthly Cost (12m)</h3>
+              <canvas id="monthly-chart" height="160"></canvas>
+            </div>
+          </div>
+
+          <div class="grid breakdowns">
+            <div class="card">
+              <h3>Spend by Provider</h3>
+              <div class="list" id="provider-breakdown"></div>
+            </div>
+            <div class="card">
+              <h3>Token Usage</h3>
+              <div class="list" id="token-breakdown"></div>
+            </div>
+            <div class="card">
+              <h3>Per-User</h3>
+              <div class="list" id="user-breakdown"></div>
+            </div>
+            <div class="card">
+              <h3>Real-Time Usage</h3>
+              <div class="realtime" id="realtime"></div>
+            </div>
+          </div>
+
+          <div class="card warnings" id="warnings"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "columns": [
+    {"id": "backlog", "title": "Backlog", "cards": []},
+    {"id": "in_progress", "title": "In Progress", "cards": []},
+    {"id": "done", "title": "Done", "cards": []},
+    {"id": "blocked", "title": "Blocked", "cards": []}
+  ]
+}

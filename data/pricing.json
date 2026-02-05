@@ -1,0 +1,20 @@
+{
+  "note": "Prices are per 1M tokens (or provider-specific unit). Update these to match your billing. If your logs already include cost, those values will be used instead of these estimates.",
+  "providers": {
+    "Anthropic": {
+      "input_per_million": 0,
+      "output_per_million": 0,
+      "cache_per_million": 0
+    },
+    "OpenAI": {
+      "input_per_million": 0,
+      "output_per_million": 0,
+      "cache_per_million": 0
+    },
+    "Google": {
+      "input_per_million": 0,
+      "output_per_million": 0,
+      "cache_per_million": 0
+    }
+  }
+}
