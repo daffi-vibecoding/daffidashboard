@@ -58,8 +58,8 @@
             <button class="btn" type="submit" id="send-code-btn">Send code</button>
           </form>
           <form id="otp-form" class="auth-form" style="display:none">
-            <label for="otp-code">Enter 6-digit code</label>
-            <input id="otp-code" type="text" placeholder="123456" maxlength="6" pattern="[0-9]{6}" required />
+            <label for="otp-code">Enter code from email</label>
+            <input id="otp-code" type="text" placeholder="12345678" maxlength="8" pattern="[0-9]{6,8}" required />
             <button class="btn" type="submit">Verify code</button>
           </form>
           <div class="auth-message" id="auth-message" data-type="info"></div>

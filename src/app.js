@@ -235,8 +235,8 @@ async function verifyOTP(event) {
   const email = el('auth-email').value.trim().toLowerCase();
   const token = el('otp-code').value.trim();
   
-  if (!token || token.length !== 6) {
-    setAuthMessage('Please enter a valid 6-digit code.', 'error');
+  if (!token || (token.length !== 6 && token.length !== 8)) {
+    setAuthMessage('Please enter the code from your email.', 'error');
     return;
   }
   
