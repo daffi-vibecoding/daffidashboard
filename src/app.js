@@ -1175,32 +1175,51 @@ function updateResponsiveState() {
 
 // === System Status ===
 async function loadSystemStatus() {
+  if (!supabase) {
+    el('sys-model').textContent = 'Auth required';
+    return;
+  }
+  
   try {
-    // Fetch sessions list
-    const sessionsResp = await fetch('/api/sessions/list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ limit: 50 }) });
-    const sessionsData = await sessionsResp.ok ? await sessionsResp.json() : { sessions: [] };
+    // Fetch system status from Supabase (synced every 10 minutes)
+    const { data, error } = await supabase
+      .from('system_status')
+      .select('*')
+      .eq('id', 1)
+      .single();
     
-    // Fetch gateway config
-    const configResp = await fetch('/api/gateway/config.get', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-    const configData = await configResp.ok ? await configResp.json() : {};
+    if (error) throw error;
     
-    renderSystemStatus(sessionsData, configData);
+    renderSystemStatus(data);
   } catch (error) {
     console.error('Failed to load system status:', error);
-    el('sys-model').textContent = 'Error loading';
-    el('sys-sessions').textContent = 'Error';
+    el('sys-model').textContent = 'No data yet';
+    el('sys-sessions').textContent = '0';
+    el('sys-default-model').textContent = 'Waiting for first sync';
+    el('sys-gateway').textContent = '⚠ No data';
   }
 }
 
-function renderSystemStatus(sessionsData, configData) {
-  const config = configData.config || {};
-  const sessions = sessionsData.sessions || [];
+function renderSystemStatus(data) {
+  if (!data) {
+    el('sys-model').textContent = 'No data';
+    return;
+  }
+  
+  const config = data.config || {};
+  const runtime = data.runtime || {};
+  const sessions = data.sessions || [];
+  
+  // Calculate time since last update
+  const lastUpdate = data.updated_at ? new Date(data.updated_at) : null;
+  const minutesAgo = lastUpdate ? Math.floor((Date.now() - lastUpdate.getTime()) / 60000) : null;
+  const updateText = minutesAgo !== null ? `${minutesAgo}m ago` : 'Unknown';
   
   // Overview stats
-  el('sys-model').textContent = config.model || 'Unknown';
-  el('sys-default-model').textContent = config.defaultModel || 'Unknown';
-  el('sys-sessions').textContent = sessions.length || '0';
-  el('sys-gateway').textContent = configData.status === 'ok' ? '✓ Online' : '⚠ Unknown';
+  el('sys-model').textContent = data.model || 'Unknown';
+  el('sys-default-model').textContent = data.default_model || 'Unknown';
+  el('sys-sessions').textContent = data.sessions_count || '0';
+  el('sys-gateway').textContent = minutesAgo !== null && minutesAgo < 15 ? `✓ Online (${updateText})` : `⚠ Stale (${updateText})`;
   
   // Active sessions list
   const sessionsList = el('sessions-list');
@@ -1210,7 +1229,7 @@ function renderSystemStatus(sessionsData, configData) {
     sessionsList.innerHTML = sessions.slice(0, 20).map(sess => `
       <div class="list-item">
         <span class="list-label">${sess.label || sess.sessionKey || 'Unknown'}</span>
-        <span class="list-value">${sess.kind || 'main'} - ${sess.model || config.model || '?'}</span>
+        <span class="list-value">${sess.kind || 'main'} - ${sess.model || data.model || '?'}</span>
       </div>
     `).join('');
   }
@@ -1218,9 +1237,9 @@ function renderSystemStatus(sessionsData, configData) {
   // Configuration list
   const configList = el('config-list');
   configList.innerHTML = Object.entries({
-    'Model': config.model || 'Not set',
-    'Default Model': config.defaultModel || 'Not set',
-    'Thinking': config.thinking || 'low',
+    'Model': data.model || 'Not set',
+    'Default Model': data.default_model || 'Not set',
+    'Thinking': data.thinking || 'low',
     'Voice Enabled': config.voice ? 'Yes' : 'No',
     'Reactions': config.reactions || 'None',
   }).map(([key, val]) => `
@@ -1232,7 +1251,6 @@ function renderSystemStatus(sessionsData, configData) {
   
   // Runtime info
   const runtimeList = el('runtime-list');
-  const runtime = config.runtime || {};
   runtimeList.innerHTML = Object.entries({
     'Agent': runtime.agent || '?',
     'Host': runtime.host || '?',
@@ -1249,9 +1267,9 @@ function renderSystemStatus(sessionsData, configData) {
   // Channel info
   const channelList = el('channel-list');
   channelList.innerHTML = Object.entries({
-    'Channel': runtime.channel || '?',
+    'Channel': runtime.channel || config.channel || '?',
     'Capabilities': runtime.capabilities || 'None',
-    'Model Override': config.model === config.defaultModel ? 'None' : config.model,
+    'Model Override': data.model === data.default_model ? 'None' : data.model,
   }).map(([key, val]) => `
     <div class="list-item">
       <span class="list-label">${key}</span>

@@ -59,10 +59,31 @@ before update on public.cards
 for each row
 execute function public.set_updated_at();
 
+-- System status table (synced from OpenClaw every 10 minutes)
+create table if not exists public.system_status (
+  id bigint primary key default 1,
+  timestamp timestamptz not null default now(),
+  model text not null,
+  default_model text not null,
+  thinking text not null,
+  sessions_count int not null default 0,
+  sessions jsonb not null default '[]'::jsonb,
+  config jsonb not null default '{}'::jsonb,
+  runtime jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  constraint single_row check (id = 1)
+);
+
+create trigger system_status_updated_at
+  before update on public.system_status
+  for each row
+execute function public.set_updated_at();
+
 alter table public.boards enable row level security;
 alter table public.columns enable row level security;
 alter table public.cards enable row level security;
 alter table public.cron_jobs enable row level security;
+alter table public.system_status enable row level security;
 
 create policy "boards_allowlist"
   on public.boards
@@ -125,6 +146,13 @@ create policy "cron_allowlist"
     auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi.amjdfi@gmail.com')
   )
   with check (
+    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi.amjdfi@gmail.com')
+  );
+
+create policy "system_status_allowlist"
+  on public.system_status
+  for select
+  using (
     auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi.amjdfi@gmail.com')
   );
 
