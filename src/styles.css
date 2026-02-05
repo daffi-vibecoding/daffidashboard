@@ -352,3 +352,128 @@ canvas {
     padding: 18px;
   }
 }
+
+/* --- Supabase auth + routing + cron jobs --- */
+
+.nav {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.nav-btn[aria-current='page'] {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.muted {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.cron-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.cron-item {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.cron-item:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.cron-item .title {
+  font-weight: 600;
+}
+
+.cron-item .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.cron-detail-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.kv .k {
+  color: var(--text-muted);
+}
+
+pre.raw {
+  margin: 0;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: auto;
+  max-height: 320px;
+}
+
+@media (max-width: 1024px) {
+  .cron-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .nav {
+    width: 100%;
+  }
+
+  /* bottom-sheet editor */
+  .modal {
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  .modal-card {
+    width: 100%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    max-height: 86vh;
+    overflow: auto;
+  }
+
+  .kv {
+    grid-template-columns: 1fr;
+  }
+}
