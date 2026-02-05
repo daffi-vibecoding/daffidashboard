@@ -51,11 +51,16 @@
       <section class="auth-panel" id="auth-panel" style="display:none">
         <div class="card auth-card">
           <h2>Sign in</h2>
-          <p class="muted">Use your approved email to receive a magic-link sign-in.</p>
+          <p class="muted">Enter your email to receive a one-time code.</p>
           <form id="auth-form" class="auth-form">
             <label for="auth-email">Email</label>
             <input id="auth-email" type="email" placeholder="you@company.com" required />
-            <button class="btn" type="submit">Send magic link</button>
+            <button class="btn" type="submit" id="send-code-btn">Send code</button>
+          </form>
+          <form id="otp-form" class="auth-form" style="display:none">
+            <label for="otp-code">Enter 6-digit code</label>
+            <input id="otp-code" type="text" placeholder="123456" maxlength="6" pattern="[0-9]{6}" required />
+            <button class="btn" type="submit">Verify code</button>
           </form>
           <div class="auth-message" id="auth-message" data-type="info"></div>
         </div>

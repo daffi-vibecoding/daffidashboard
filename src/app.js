@@ -177,6 +177,12 @@ function updateAuthUI() {
     authPanel.style.display = 'grid';
     userChip.textContent = 'Signed out';
     signOutBtn.style.display = 'none';
+    // Reset auth forms
+    el('auth-form').style.display = 'block';
+    el('otp-form').style.display = 'none';
+    el('auth-email').value = '';
+    el('otp-code').value = '';
+    setAuthMessage('', 'info');
   }
 }
 
@@ -192,7 +198,7 @@ function isAllowedEmail(email) {
   return ALLOWED_EMAILS.includes(email.toLowerCase());
 }
 
-async function sendMagicLink(event) {
+async function sendOTP(event) {
   event.preventDefault();
   const email = el('auth-email').value.trim().toLowerCase();
   if (!email) return;
@@ -205,22 +211,47 @@ async function sendMagicLink(event) {
     return;
   }
 
-  setAuthMessage('Sending magic link…', 'info');
-  const redirectUrl = window.location.origin.includes('localhost')
-    ? 'https://daffidashboard-topaz.vercel.app'
-    : window.location.origin;
+  setAuthMessage('Sending code…', 'info');
   
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: redirectUrl,
+      shouldCreateUser: false,
     },
   });
 
   if (error) {
-    setAuthMessage(`Failed to send link: ${error.message}`, 'error');
+    setAuthMessage(`Failed to send code: ${error.message}`, 'error');
   } else {
-    setAuthMessage('Magic link sent. Check your inbox.', 'success');
+    setAuthMessage('Code sent! Check your email and enter it below.', 'success');
+    el('auth-form').style.display = 'none';
+    el('otp-form').style.display = 'block';
+    el('otp-code').focus();
+  }
+}
+
+async function verifyOTP(event) {
+  event.preventDefault();
+  const email = el('auth-email').value.trim().toLowerCase();
+  const token = el('otp-code').value.trim();
+  
+  if (!token || token.length !== 6) {
+    setAuthMessage('Please enter a valid 6-digit code.', 'error');
+    return;
+  }
+  
+  setAuthMessage('Verifying…', 'info');
+  
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: 'email',
+  });
+
+  if (error) {
+    setAuthMessage(`Verification failed: ${error.message}`, 'error');
+  } else {
+    setAuthMessage('Success! Signing you in…', 'success');
   }
 }
 
@@ -1196,7 +1227,8 @@ function init() {
     btn.addEventListener('click', () => updateNav(btn.dataset.route));
   });
 
-  el('auth-form').addEventListener('submit', sendMagicLink);
+  el('auth-form').addEventListener('submit', sendOTP);
+  el('otp-form').addEventListener('submit', verifyOTP);
   el('sign-out-btn').addEventListener('click', signOut);
 
   el('cron-refresh').addEventListener('click', loadCronJobs);
