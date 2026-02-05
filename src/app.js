@@ -156,12 +156,18 @@ function updateNav(route) {
     kanban: 'kanban-panel',
     cron: 'cron-panel',
     metrics: 'metrics-panel',
+    system: 'system-panel',
   };
   Object.entries(routes).forEach(([key, id]) => {
     const panel = el(id);
     if (!panel) return;
     panel.style.display = key === route ? 'block' : 'none';
   });
+  
+  // Load system data when switching to system view
+  if (route === 'system') {
+    loadSystemStatus();
+  }
 }
 
 function updateAuthUI() {
@@ -1167,6 +1173,93 @@ function updateResponsiveState() {
   renderKanban();
 }
 
+// === System Status ===
+async function loadSystemStatus() {
+  try {
+    // Fetch sessions list
+    const sessionsResp = await fetch('/api/sessions/list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ limit: 50 }) });
+    const sessionsData = await sessionsResp.ok ? await sessionsResp.json() : { sessions: [] };
+    
+    // Fetch gateway config
+    const configResp = await fetch('/api/gateway/config.get', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    const configData = await configResp.ok ? await configResp.json() : {};
+    
+    renderSystemStatus(sessionsData, configData);
+  } catch (error) {
+    console.error('Failed to load system status:', error);
+    el('sys-model').textContent = 'Error loading';
+    el('sys-sessions').textContent = 'Error';
+  }
+}
+
+function renderSystemStatus(sessionsData, configData) {
+  const config = configData.config || {};
+  const sessions = sessionsData.sessions || [];
+  
+  // Overview stats
+  el('sys-model').textContent = config.model || 'Unknown';
+  el('sys-default-model').textContent = config.defaultModel || 'Unknown';
+  el('sys-sessions').textContent = sessions.length || '0';
+  el('sys-gateway').textContent = configData.status === 'ok' ? '✓ Online' : '⚠ Unknown';
+  
+  // Active sessions list
+  const sessionsList = el('sessions-list');
+  if (sessions.length === 0) {
+    sessionsList.innerHTML = '<div class="list-item"><span class="list-label">No active sessions</span></div>';
+  } else {
+    sessionsList.innerHTML = sessions.slice(0, 20).map(sess => `
+      <div class="list-item">
+        <span class="list-label">${sess.label || sess.sessionKey || 'Unknown'}</span>
+        <span class="list-value">${sess.kind || 'main'} - ${sess.model || config.model || '?'}</span>
+      </div>
+    `).join('');
+  }
+  
+  // Configuration list
+  const configList = el('config-list');
+  configList.innerHTML = Object.entries({
+    'Model': config.model || 'Not set',
+    'Default Model': config.defaultModel || 'Not set',
+    'Thinking': config.thinking || 'low',
+    'Voice Enabled': config.voice ? 'Yes' : 'No',
+    'Reactions': config.reactions || 'None',
+  }).map(([key, val]) => `
+    <div class="list-item">
+      <span class="list-label">${key}</span>
+      <span class="list-value">${val}</span>
+    </div>
+  `).join('');
+  
+  // Runtime info
+  const runtimeList = el('runtime-list');
+  const runtime = config.runtime || {};
+  runtimeList.innerHTML = Object.entries({
+    'Agent': runtime.agent || '?',
+    'Host': runtime.host || '?',
+    'OS': runtime.os || '?',
+    'Node Version': runtime.node || '?',
+    'Repository': runtime.repo || '?',
+  }).map(([key, val]) => `
+    <div class="list-item">
+      <span class="list-label">${key}</span>
+      <span class="list-value">${val}</span>
+    </div>
+  `).join('');
+  
+  // Channel info
+  const channelList = el('channel-list');
+  channelList.innerHTML = Object.entries({
+    'Channel': runtime.channel || '?',
+    'Capabilities': runtime.capabilities || 'None',
+    'Model Override': config.model === config.defaultModel ? 'None' : config.model,
+  }).map(([key, val]) => `
+    <div class="list-item">
+      <span class="list-label">${key}</span>
+      <span class="list-value">${val}</span>
+    </div>
+  `).join('');
+}
+
 function init() {
   loadPreferences();
   document.body.dataset.theme = state.theme;
@@ -1243,6 +1336,11 @@ function init() {
 
   renderUsageUnavailable();
   initAuth();
+  
+  el('system-refresh').addEventListener('click', loadSystemStatus);
+  if (state.activeRoute === 'system') {
+    loadSystemStatus();
+  }
 }
 
 window.addEventListener('load', init);

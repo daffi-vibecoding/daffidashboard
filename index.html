@@ -35,6 +35,7 @@
           <button class="nav-btn" data-route="kanban" aria-current="page">Kanban</button>
           <button class="nav-btn" data-route="cron">Cron Jobs</button>
           <button class="nav-btn" data-route="metrics">API Costs</button>
+          <button class="nav-btn" data-route="system">System</button>
         </nav>
         <div class="top-actions">
           <div class="status" aria-live="polite">
@@ -188,6 +189,57 @@
           </div>
 
           <div class="card warnings" id="warnings"></div>
+        </section>
+
+        <!-- System/OpenClaw Status -->
+        <section class="panel system" id="system-panel" style="display:none">
+          <div class="panel-header">
+            <h2>OpenClaw System Status</h2>
+            <div class="panel-actions">
+              <button class="btn ghost" id="system-refresh">Refresh</button>
+            </div>
+          </div>
+
+          <div class="grid stats" id="system-overview">
+            <div class="card stat">
+              <div class="stat-label">Current Model</div>
+              <div class="stat-value" id="sys-model">...</div>
+            </div>
+            <div class="card stat">
+              <div class="stat-label">Default Model</div>
+              <div class="stat-value" id="sys-default-model">...</div>
+            </div>
+            <div class="card stat">
+              <div class="stat-label">Active Sessions</div>
+              <div class="stat-value" id="sys-sessions">...</div>
+            </div>
+            <div class="card stat">
+              <div class="stat-label">Gateway Status</div>
+              <div class="stat-value" id="sys-gateway">...</div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <h3>Active Sessions</h3>
+              <div class="list" id="sessions-list"></div>
+            </div>
+            <div class="card">
+              <h3>Configuration</h3>
+              <div class="list" id="config-list"></div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <h3>Runtime Info</h3>
+              <div class="list" id="runtime-list"></div>
+            </div>
+            <div class="card">
+              <h3>Channel Info</h3>
+              <div class="list" id="channel-list"></div>
+            </div>
+          </div>
         </section>
       </main>
     </div>
