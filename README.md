@@ -29,9 +29,10 @@ npm run dev
 3. In Auth settings:
    - Enable Email provider.
    - Add your site URL and the redirect URL (for Vercel) so magic links return to the app.
-4. Only these two emails are allowed by policy and UI:
+4. Only these emails are allowed by policy and UI:
    - `dfirwin2@gmail.com`
    - `jones.amanda892@gmail.com`
+   - `daffi.amjdfi@gmail.com`
 
 Note: The UI blocks other emails from requesting magic links, and RLS blocks data access for any other account.
 

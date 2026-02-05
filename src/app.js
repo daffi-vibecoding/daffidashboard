@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-const ALLOWED_EMAILS = ['dfirwin2@gmail.com', 'jones.amanda892@gmail.com'];
+const ALLOWED_EMAILS = ['dfirwin2@gmail.com', 'jones.amanda892@gmail.com', 'daffi.amjdfi@gmail.com'];
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const USAGE_API_URL = import.meta.env.VITE_USAGE_API_URL || '';
