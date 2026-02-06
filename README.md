@@ -32,7 +32,7 @@ npm run dev
 4. Only these emails are allowed by policy and UI:
    - `dfirwin2@gmail.com`
    - `jones.amanda892@gmail.com`
-   - `daffi.amjdfi@gmail.com`
+   - `daffi@donirwin.xyz`
 
 Note: The UI blocks other emails from requesting magic links, and RLS blocks data access for any other account.
 

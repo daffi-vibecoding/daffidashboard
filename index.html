@@ -32,9 +32,9 @@
           </div>
         </div>
         <nav class="nav" aria-label="Primary">
-          <button class="nav-btn" data-route="kanban" aria-current="page">Kanban</button>
-          <button class="nav-btn" data-route="cron">Cron Jobs</button>
-          <button class="nav-btn" data-route="metrics">API Costs</button>
+          <button class="nav-btn" data-route="projects" aria-current="page">Projects</button>
+          <button class="nav-btn" data-route="tasks">Tasks</button>
+          <button class="nav-btn" data-route="notes">Notes</button>
           <button class="nav-btn" data-route="system">System</button>
         </nav>
         <div class="top-actions">
@@ -44,7 +44,7 @@
           </div>
           <div class="chip" id="user-email" title="Signed in user">Signed out</div>
           <button class="btn ghost" id="sign-out-btn" aria-label="Sign out" style="display:none">Sign out</button>
-          <button class="btn ghost" id="refresh-btn" aria-label="Refresh usage and kanban data">Refresh</button>
+          <button class="btn ghost" id="refresh-btn" aria-label="Refresh usage and tasks data">Refresh</button>
           <button class="btn" id="theme-btn" aria-label="Toggle theme">Toggle Theme</button>
         </div>
       </header>
@@ -70,11 +70,7 @@
       <main class="layout">
         <section class="panel kanban" id="kanban-panel">
           <div class="panel-header">
-            <h2>Kanban</h2>
-            <div class="panel-actions">
-              <button class="btn ghost" id="add-column-btn">Add Column</button>
-              <button class="btn" id="add-card-btn">Add Card</button>
-            </div>
+            <h2>Tasks</h2>
           </div>
           <div class="kanban-toolbar">
             <div class="field">
@@ -117,10 +113,9 @@
 
         <section class="panel cron" id="cron-panel" style="display:none">
           <div class="panel-header">
-            <h2>Cron Jobs</h2>
+            <h2>Notes</h2>
             <div class="panel-actions">
               <button class="btn ghost" id="cron-refresh">Refresh</button>
-              <button class="btn" id="cron-new">New Job</button>
             </div>
           </div>
 
@@ -140,7 +135,7 @@
 
         <section class="panel metrics" id="metrics-panel">
           <div class="panel-header">
-            <h2>API Cost Tracking</h2>
+            <h2>Projects</h2>
             <div class="panel-actions">
               <div class="chip" id="log-source">Logs: …</div>
               <div class="chip" id="last-updated">Updated: …</div>
@@ -195,9 +190,6 @@
         <section class="panel system" id="system-panel" style="display:none">
           <div class="panel-header">
             <h2>OpenClaw System Status</h2>
-            <div class="panel-actions">
-              <button class="btn ghost" id="system-refresh">Refresh</button>
-            </div>
           </div>
 
           <div class="grid stats" id="system-overview">
@@ -238,6 +230,17 @@
             <div class="card">
               <h3>Channel Info</h3>
               <div class="list" id="channel-list"></div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <h3>Email Intake (Fastmail)</h3>
+              <div class="list" id="email-list"></div>
+            </div>
+            <div class="card">
+              <h3>Recent Activity</h3>
+              <div class="list" id="events-list"></div>
             </div>
           </div>
         </section>

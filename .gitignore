@@ -4,3 +4,6 @@ node_modules
 .env
 .env.*
 .env.supabase
+.DS_Store
+scripts/out/
+supabase/.temp/

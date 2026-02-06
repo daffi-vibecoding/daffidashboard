@@ -6,7 +6,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 
@@ -30,6 +30,7 @@ async function getOpenClawStatus() {
     sessions: [],
     config: {},
     runtime: {},
+    email: {},
   };
 
   try {
@@ -62,6 +63,72 @@ async function getOpenClawStatus() {
     status.sessions = [];
   } catch (error) {
     console.warn('⚠️  Could not fetch sessions:', error.message);
+  }
+
+  // Email intake status (Fastmail receiver writes this locally)
+  try {
+    const emailStatusPaths = [
+      process.env.FASTMAIL_STATUS_PATH,
+      join(homedir(), 'mail', 'state', 'fastmail_receiver_last.json'),
+      join(homedir(), 'workspace-telegram', 'mail', 'state', 'fastmail_receiver_last.json'),
+      join(process.cwd(), 'mail', 'state', 'fastmail_receiver_last.json'),
+      join(process.cwd(), '..', 'workspace-telegram', 'mail', 'state', 'fastmail_receiver_last.json'),
+    ].filter(Boolean);
+
+    let emailData = null;
+    for (const candidate of emailStatusPaths) {
+      if (!existsSync(candidate)) continue;
+      emailData = JSON.parse(readFileSync(candidate, 'utf8'));
+      if (emailData) break;
+    }
+    status.email = emailData || { error: 'no-local-email-status' };
+  } catch (error) {
+    status.email = { error: 'no-local-email-status', detail: error.message };
+  }
+
+  // Optional: capture local event summary if available
+  try {
+    const localEventPaths = [
+      process.env.LOCAL_EVENTS_PATH,
+      join(homedir(), 'mail', 'state', 'local-events.jsonl'),
+      join(process.cwd(), 'data', 'local-events.jsonl'),
+    ].filter(Boolean);
+
+    let eventsPath = null;
+    for (const candidate of localEventPaths) {
+      if (existsSync(candidate)) {
+        eventsPath = candidate;
+        break;
+      }
+    }
+
+    if (eventsPath) {
+      const lines = readFileSync(eventsPath, 'utf8')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+      const recent = lines.slice(-25).map((line) => {
+        try {
+          return JSON.parse(line);
+        } catch {
+          return null;
+        }
+      }).filter(Boolean);
+      const lastEvent = recent[recent.length - 1] || null;
+      status.runtime = {
+        ...status.runtime,
+        local_events: {
+          path: eventsPath,
+          count: recent.length,
+          last_ts: lastEvent?.ts || null,
+        },
+      };
+    }
+  } catch (error) {
+    status.runtime = {
+      ...status.runtime,
+      local_events: { error: error.message },
+    };
   }
 
   return status;

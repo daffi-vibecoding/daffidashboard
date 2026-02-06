@@ -89,11 +89,11 @@ create policy "boards_allowlist"
   on public.boards
   for all
   using (
-    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi.amjdfi@gmail.com')
+    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi@donirwin.xyz')
     and owner_id = auth.uid()
   )
   with check (
-    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi.amjdfi@gmail.com')
+    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi@donirwin.xyz')
     and owner_id = auth.uid()
   );
 
@@ -101,7 +101,7 @@ create policy "columns_allowlist"
   on public.columns
   for all
   using (
-    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi.amjdfi@gmail.com')
+    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi@donirwin.xyz')
     and exists (
       select 1 from public.boards b
       where b.id = columns.board_id
@@ -109,7 +109,7 @@ create policy "columns_allowlist"
     )
   )
   with check (
-    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi.amjdfi@gmail.com')
+    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi@donirwin.xyz')
     and exists (
       select 1 from public.boards b
       where b.id = columns.board_id
@@ -121,7 +121,7 @@ create policy "cards_allowlist"
   on public.cards
   for all
   using (
-    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi.amjdfi@gmail.com')
+    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi@donirwin.xyz')
     and exists (
       select 1 from public.columns c
       join public.boards b on b.id = c.board_id
@@ -130,7 +130,7 @@ create policy "cards_allowlist"
     )
   )
   with check (
-    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi.amjdfi@gmail.com')
+    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi@donirwin.xyz')
     and exists (
       select 1 from public.columns c
       join public.boards b on b.id = c.board_id
@@ -143,17 +143,17 @@ create policy "cron_allowlist"
   on public.cron_jobs
   for all
   using (
-    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi.amjdfi@gmail.com')
+    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi@donirwin.xyz')
   )
   with check (
-    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi.amjdfi@gmail.com')
+    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi@donirwin.xyz')
   );
 
 create policy "system_status_allowlist"
   on public.system_status
   for select
   using (
-    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi.amjdfi@gmail.com')
+    auth.email() in ('dfirwin2@gmail.com','jones.amanda892@gmail.com','daffi@donirwin.xyz')
   );
 
 create index if not exists idx_columns_board on public.columns(board_id);

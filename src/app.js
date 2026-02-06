@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-const ALLOWED_EMAILS = ['dfirwin2@gmail.com', 'jones.amanda892@gmail.com', 'daffi.amjdfi@gmail.com'];
+const ALLOWED_EMAILS = ['dfirwin2@gmail.com', 'jones.amanda892@gmail.com', 'daffi@donirwin.xyz'];
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const USAGE_API_URL = import.meta.env.VITE_USAGE_API_URL || '';
@@ -15,6 +15,8 @@ const DEFAULT_COLUMNS = [
   { title: 'Done', position: 3 },
   { title: 'Blocked', position: 4 },
 ];
+
+const VIEW_ONLY = true;
 
 const state = {
   user: null,
@@ -38,12 +40,13 @@ const state = {
   usageLoading: false,
   usageError: null,
   authReady: false,
-  activeRoute: 'kanban',
+  activeRoute: 'tasks',
   activeColumnId: null,
   isNarrow: false,
   cronJobs: [],
   cronFilter: '',
   selectedCronId: null,
+  systemEvents: [],
 };
 
 const el = (id) => document.getElementById(id);
@@ -71,6 +74,37 @@ const formatDateTime = (value) => {
 };
 
 const safeText = (value) => (value ? String(value) : '—');
+const safeValue = (value) =>
+  value === undefined || value === null || value === '' ? '—' : String(value);
+
+const coalesce = (...values) =>
+  values.find((value) => value !== undefined && value !== null && value !== '');
+
+const toDate = (value) => {
+  if (!value && value !== 0) return null;
+  if (value instanceof Date) return value;
+  if (typeof value === 'number') {
+    const ms = value < 1e12 ? value * 1000 : value;
+    const date = new Date(ms);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatAge = (value) => {
+  const date = toDate(value);
+  if (!date) return 'Unknown';
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 0) return 'Just now';
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) return `${hours}h ${minutes % 60}m ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ${hours % 24}h ago`;
+};
 
 const normalizeTags = (value) => {
   if (!value) return [];
@@ -120,7 +154,14 @@ function loadPreferences() {
   const route = localStorage.getItem(STORAGE_KEYS.route);
   if (theme) state.theme = theme;
   if (compact) state.compact = compact === 'true';
-  if (route) state.activeRoute = route;
+  if (route) {
+    const routeMap = {
+      kanban: 'tasks',
+      cron: 'notes',
+      metrics: 'projects',
+    };
+    state.activeRoute = routeMap[route] || route;
+  }
   if (filters) {
     try {
       const parsed = JSON.parse(filters);
@@ -146,18 +187,22 @@ function setStatus(label, ok) {
 }
 
 function updateNav(route) {
+  const routes = {
+    tasks: 'kanban-panel',
+    notes: 'cron-panel',
+    projects: 'metrics-panel',
+    system: 'system-panel',
+  };
+
+  if (!routes[route]) {
+    route = 'tasks';
+  }
   state.activeRoute = route;
   persistPreferences();
   document.querySelectorAll('.nav-btn').forEach((btn) => {
     const isActive = btn.dataset.route === route;
     btn.setAttribute('aria-current', isActive ? 'page' : 'false');
   });
-  const routes = {
-    kanban: 'kanban-panel',
-    cron: 'cron-panel',
-    metrics: 'metrics-panel',
-    system: 'system-panel',
-  };
   Object.entries(routes).forEach(([key, id]) => {
     const panel = el(id);
     if (!panel) return;
@@ -167,6 +212,7 @@ function updateNav(route) {
   // Load system data when switching to system view
   if (route === 'system') {
     loadSystemStatus();
+    loadSystemEvents();
   }
 }
 
@@ -409,7 +455,7 @@ async function loadKanban() {
     renderKanban();
   } catch (err) {
     console.error(err);
-    alert(`Failed to load kanban: ${err.message}`);
+    alert(`Failed to load tasks: ${err.message}`);
   }
 }
 
@@ -478,7 +524,7 @@ function renderKanban() {
       visibleCards += 1;
       const cardEl = document.createElement('div');
       cardEl.className = 'card-item';
-      cardEl.draggable = true;
+      cardEl.draggable = !VIEW_ONLY;
       cardEl.dataset.cardId = card.id;
       cardEl.dataset.columnId = column.id;
       const title = createEl('p', null, safeText(card.title));
@@ -503,33 +549,37 @@ function renderKanban() {
       cardEl.append(title, meta);
       if (tags.children.length) cardEl.append(tags);
 
-      cardEl.addEventListener('dragstart', (event) => {
-        event.dataTransfer.setData('text/plain', JSON.stringify({
-          cardId: card.id,
-          fromColumn: column.id,
-        }));
-      });
+      if (!VIEW_ONLY) {
+        cardEl.addEventListener('dragstart', (event) => {
+          event.dataTransfer.setData('text/plain', JSON.stringify({
+            cardId: card.id,
+            fromColumn: column.id,
+          }));
+        });
 
-      cardEl.addEventListener('click', () => openCardModal('edit', { ...card, columnId: column.id }));
+        cardEl.addEventListener('click', () => openCardModal('edit', { ...card, columnId: column.id }));
+      }
 
       colEl.appendChild(cardEl);
     });
 
-    colEl.addEventListener('dragover', (event) => {
-      event.preventDefault();
-      colEl.classList.add('drop-target');
-    });
+    if (!VIEW_ONLY) {
+      colEl.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        colEl.classList.add('drop-target');
+      });
 
-    colEl.addEventListener('dragleave', () => {
-      colEl.classList.remove('drop-target');
-    });
+      colEl.addEventListener('dragleave', () => {
+        colEl.classList.remove('drop-target');
+      });
 
-    colEl.addEventListener('drop', (event) => {
-      event.preventDefault();
-      colEl.classList.remove('drop-target');
-      const payload = JSON.parse(event.dataTransfer.getData('text/plain'));
-      moveCard(payload.cardId, payload.fromColumn, column.id);
-    });
+      colEl.addEventListener('drop', (event) => {
+        event.preventDefault();
+        colEl.classList.remove('drop-target');
+        const payload = JSON.parse(event.dataTransfer.getData('text/plain'));
+        moveCard(payload.cardId, payload.fromColumn, column.id);
+      });
+    }
 
     board.appendChild(colEl);
   });
@@ -582,6 +632,7 @@ function updateKanbanMeta() {
 }
 
 async function moveCard(cardId, fromColumnId, toColumnId) {
+  if (VIEW_ONLY) return;
   if (fromColumnId === toColumnId) return;
   const fromColumn = state.kanban.columns.find((c) => c.id === fromColumnId);
   const toColumn = state.kanban.columns.find((c) => c.id === toColumnId);
@@ -607,11 +658,13 @@ async function moveCard(cardId, fromColumnId, toColumnId) {
 }
 
 function addCard() {
+  if (VIEW_ONLY) return;
   if (!state.kanban) return;
   openCardModal('create');
 }
 
 async function addColumn() {
+  if (VIEW_ONLY) return;
   if (!state.kanban || !state.board) return;
   const title = prompt('New column title');
   if (!title || !title.trim()) return;
@@ -694,6 +747,7 @@ function getCardById(cardId) {
 
 async function handleCardSubmit(event) {
   event.preventDefault();
+  if (VIEW_ONLY) return;
   if (!state.kanban || !state.board) return;
   const form = event.target;
   const data = {
@@ -781,6 +835,7 @@ async function handleCardSubmit(event) {
 }
 
 async function deleteCard() {
+  if (VIEW_ONLY) return;
   if (!state.modal.cardId) return;
   const found = getCardById(state.modal.cardId);
   if (!found) return;
@@ -1093,6 +1148,7 @@ function renderCronDetail(job = null) {
 }
 
 async function openCronCreate() {
+  if (VIEW_ONLY) return;
   const panel = el('cron-detail');
   if (!panel) return;
   panel.innerHTML = `
@@ -1177,6 +1233,7 @@ function updateResponsiveState() {
 async function loadSystemStatus() {
   if (!supabase) {
     el('sys-model').textContent = 'Auth required';
+    renderEmailStatus(null, 'Auth required');
     return;
   }
   
@@ -1197,12 +1254,14 @@ async function loadSystemStatus() {
     el('sys-sessions').textContent = '0';
     el('sys-default-model').textContent = 'Waiting for first sync';
     el('sys-gateway').textContent = '⚠ No data';
+    renderEmailStatus(null, 'Waiting for first sync');
   }
 }
 
 function renderSystemStatus(data) {
   if (!data) {
     el('sys-model').textContent = 'No data';
+    renderEmailStatus(null);
     return;
   }
   
@@ -1219,7 +1278,10 @@ function renderSystemStatus(data) {
   el('sys-model').textContent = data.model || 'Unknown';
   el('sys-default-model').textContent = data.default_model || 'Unknown';
   el('sys-sessions').textContent = data.sessions_count || '0';
-  el('sys-gateway').textContent = minutesAgo !== null && minutesAgo < 15 ? `✓ Online (${updateText})` : `⚠ Stale (${updateText})`;
+  // Health indicator: the status sync is scheduled every 10 minutes.
+  // Treat anything >12 minutes as DOWN (missed its expected nudge).
+  const isDown = minutesAgo === null || minutesAgo > 12;
+  el('sys-gateway').textContent = isDown ? `✗ DOWN (last update: ${updateText})` : `✓ Online (${updateText})`;
   
   // Active sessions list
   const sessionsList = el('sessions-list');
@@ -1276,6 +1338,131 @@ function renderSystemStatus(data) {
       <span class="list-value">${val}</span>
     </div>
   `).join('');
+
+  renderEmailStatus(data.email);
+}
+
+function renderEmailStatus(email, fallback = null) {
+  const list = el('email-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  if (!email || typeof email !== 'object' || Object.keys(email || {}).length === 0) {
+    const empty = createEl('div', 'list-item');
+    empty.append(createEl('span', 'list-label', fallback || 'No email status yet'));
+    list.append(empty);
+    return;
+  }
+
+  const lastSync = coalesce(
+    email.last_sync,
+    email.lastSync,
+    email.last_run,
+    email.lastRun,
+    email.updated_at,
+    email.updatedAt,
+    email.ts,
+    email.timestamp,
+  );
+  const newCount = coalesce(
+    email.new,
+    email.new_count,
+    email.newCount,
+    email.added,
+    email.added_count,
+    email.received,
+    email.processed_new,
+  );
+  const skippedCount = coalesce(
+    email.skipped,
+    email.skipped_count,
+    email.skippedCount,
+    email.ignored,
+    email.ignored_count,
+  );
+  const status = coalesce(email.status, email.state, email.ok ? 'ok' : null);
+  const error = coalesce(email.error, email.last_error, email.failure);
+
+  const items = [
+    { label: 'Last Sync', value: lastSync ? `${formatAge(lastSync)} (${formatDateTime(lastSync)})` : 'Unknown' },
+    { label: 'New', value: newCount ?? '—' },
+    { label: 'Skipped', value: skippedCount ?? '—' },
+  ];
+  if (status) items.push({ label: 'Status', value: status });
+  if (error) items.push({ label: 'Error', value: error });
+
+  items.forEach((item) => {
+    const row = createEl('div', 'list-item');
+    row.append(createEl('span', 'list-label', item.label));
+    row.append(createEl('span', 'list-value', safeValue(item.value)));
+    list.append(row);
+  });
+}
+
+async function loadSystemEvents() {
+  const list = el('events-list');
+  if (!list) return;
+
+  if (!supabase) {
+    list.innerHTML = '<div class="list-item"><span class="list-label">Auth required</span></div>';
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('system_events')
+      .select('ts, source, level, message')
+      .order('ts', { ascending: false })
+      .limit(25);
+
+    if (error) throw error;
+    state.systemEvents = data || [];
+    renderSystemEvents();
+  } catch (error) {
+    console.error('Failed to load system events:', error);
+    list.innerHTML = '<div class="list-item"><span class="list-label">No recent activity</span></div>';
+  }
+}
+
+function renderSystemEvents() {
+  const list = el('events-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  if (!state.systemEvents.length) {
+    list.innerHTML = '<div class="list-item"><span class="list-label">No recent activity</span></div>';
+    return;
+  }
+
+  state.systemEvents.forEach((event) => {
+    const row = createEl('div', 'list-item');
+    const main = createEl('div', 'list-main');
+    const meta = createEl(
+      'span',
+      'list-meta',
+      `${formatDateTime(event.ts)} · ${safeText(event.source)} · ${safeText(event.level)}`
+    );
+    main.append(createEl('span', 'list-value', safeText(event.message)));
+    main.append(meta);
+    row.append(main);
+    list.append(row);
+  });
+}
+
+function applyViewOnlyUI() {
+  const hideIds = [
+    'add-column-btn',
+    'add-card-btn',
+    'cron-new',
+    'save-card',
+    'delete-card',
+    'cron-save',
+    'cron-delete',
+  ];
+  hideIds.forEach((id) => {
+    const node = el(id);
+    if (node) node.style.display = 'none';
+  });
 }
 
 function init() {
@@ -1283,8 +1470,10 @@ function init() {
   document.body.dataset.theme = state.theme;
   document.body.classList.toggle('compact', state.compact);
 
-  el('add-card-btn').addEventListener('click', addCard);
-  el('add-column-btn').addEventListener('click', addColumn);
+  if (!VIEW_ONLY) {
+    el('add-card-btn')?.addEventListener('click', addCard);
+    el('add-column-btn')?.addEventListener('click', addColumn);
+  }
   el('refresh-btn').addEventListener('click', () => {
     loadUsage();
     loadKanban();
@@ -1321,8 +1510,10 @@ function init() {
     persistPreferences();
   });
   el('close-modal').addEventListener('click', closeCardModal);
-  el('card-form').addEventListener('submit', handleCardSubmit);
-  el('delete-card').addEventListener('click', deleteCard);
+  if (!VIEW_ONLY) {
+    el('card-form')?.addEventListener('submit', handleCardSubmit);
+    el('delete-card')?.addEventListener('click', deleteCard);
+  }
   el('card-modal').addEventListener('click', (event) => {
     if (event.target.id === 'card-modal') closeCardModal();
   });
@@ -1343,11 +1534,17 @@ function init() {
   el('sign-out-btn').addEventListener('click', signOut);
 
   el('cron-refresh').addEventListener('click', loadCronJobs);
-  el('cron-new').addEventListener('click', openCronCreate);
+  if (!VIEW_ONLY) {
+    el('cron-new')?.addEventListener('click', openCronCreate);
+  }
   el('cron-search').addEventListener('input', (event) => {
     state.cronFilter = event.target.value;
     renderCronList();
   });
+
+  if (VIEW_ONLY) {
+    applyViewOnlyUI();
+  }
 
   updateNav(state.activeRoute);
   updateResponsiveState();
@@ -1355,9 +1552,9 @@ function init() {
   renderUsageUnavailable();
   initAuth();
   
-  el('system-refresh').addEventListener('click', loadSystemStatus);
   if (state.activeRoute === 'system') {
     loadSystemStatus();
+    loadSystemEvents();
   }
 }
 

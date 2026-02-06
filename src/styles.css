@@ -448,6 +448,36 @@ body.compact .column {
   gap: 10px;
 }
 
+.list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+}
+
+.list-label {
+  color: var(--text-muted);
+}
+
+.list-value {
+  font-weight: 600;
+}
+
+.list-main {
+  display: grid;
+  gap: 4px;
+}
+
+.list-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .list-row {
   display: flex;
   justify-content: space-between;
